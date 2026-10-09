@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII 字符画生成器</title>
+<style>
+/* ==================== Reset & Base ==================== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:          #1e1e1e;
+  --panel-bg:    #252525;
+  --card-bg:     #2d2d2d;
+  --border:      #3a3a3a;
+  --border-hi:   #505050;
+  --text:        #e0e0e0;
+  --text-dim:    #888;
+  --text-faint:  #666;
+  --accent:      #4a9eff;
+  --accent-dim:  #2a6ecc;
+  --danger:      #e06c6c;
+  --success:     #6cb66c;
+  --radius:      6px;
+  --font-mono:   'Courier New', 'Consolas', 'Monaco', 'Lucida Console', monospace;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ==================== Layout ==================== */
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+.panel {
+  width: 350px;
+  min-width: 350px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ==================== Panel Sections ==================== */
+.section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+/* ==================== Upload ==================== */
+.upload-area {
+  border: 2px dashed var(--border-hi);
+  border-radius: var(--radius);
+  padding: 24px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+}
+
+.upload-area:hover {
+  border-color: var(--accent);
+  background: rgba(74, 158, 255, 0.05);
+}
+
+.upload-area.drag-over {
+  border-color: var(--accent);
+  background: rgba(74, 158, 255, 0.12);
+}
+
+.upload-area p {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.upload-area .upload-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.image-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-faint);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.image-info.show { display: flex; }
+
+.image-info .filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.clear-btn:hover { background: rgba(224, 108, 108, 0.15); }
+
+/* ==================== Form Controls ==================== */
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group:last-child { margin-bottom: 0; }
+
+.form-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.form-label .value {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--card-bg);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--card-bg);
+}
+
+select, input[type="text"], input[type="number"] {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+select:focus, input:focus {
+  border-color: var(--accent);
+}
+
+select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* ==================== Buttons ==================== */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.btn:last-child { margin-bottom: 0; }
+
+.btn:hover:not(:disabled) {
+  background: var(--card-bg);
+  border-color: var(--border-hi);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: #fff;
+  text-align: center;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.btn-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-left: 4px;
+  font-style: italic;
+}
+
+.btn-primary .btn-label { color: rgba(255,255,255,0.7); }
+
+/* ==================== Info Notes ==================== */
+.info-notes {
+  font-size: 11px;
+  color: var(--text-faint);
+  line-height: 1.6;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  border-left: 2px solid var(--accent);
+}
+
+.info-notes strong { color: var(--text-dim); }
+
+/* ==================== Preview ==================== */
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.preview-header .stats {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.preview-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+#preview {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  padding: 12px;
+  margin: 0;
+  display: inline-block;
+  min-width: 100%;
+  min-height: 100%;
+  tab-size: 8; /* fallback */
+}
+
+#preview.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-size: 14px;
+  font-family: -apple-system, sans-serif;
+  white-space: normal;
+  text-align: center;
+  line-height: 2;
+}
+
+/* ==================== Toast ==================== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #333;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.toast.error   { background: #c0392b; }
+.toast.success { background: #27ae60; }
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+  .app { flex-direction: column; }
+  .panel {
+    width: 100%;
+    min-width: 0;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .main { min-height: 50vh; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ==================== Left Panel ==================== -->
+  <aside class="panel">
+
+    <!-- Upload Section -->
+    <div class="section">
+      <div class="section-title">上传图片</div>
+      <div class="upload-area" id="uploadArea">
+        <span class="upload-icon">📁</span>
+        <p>拖拽图片到此处<br>或点击选择文件<br>或 Ctrl+V 粘贴</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div class="image-info" id="imageInfo">
+        <span class="filename" id="filename"></span>
+        <button class="clear-btn" id="clearImageBtn">✕ 清除</button>
+      </div>
+    </div>
+
+    <!-- Parameters Section -->
+    <div class="section">
+      <div class="section-title">参数设置</div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>输出宽度（字符数）</span>
+          <span class="value" id="widthValue">80</span>
+        </label>
+        <input type="range" id="widthSlider" min="20" max="200" value="80" step="1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span>字符集预设</span></label>
+        <select id="charsetSelect">
+          <option value="classic">经典：` .:-=+*#%@</option>
+          <option value="detailed">细腻：` .,:;irsXA253hMHGS#9B&@</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="customCharsetGroup" style="display:none">
+        <label class="form-label"><span>自定义字符集（暗→亮）</span></label>
+        <input type="text" id="customCharsetInput" value=" .:-=+*#%@" placeholder="ASCII 可打印字符">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>亮度</span>
+          <span class="value" id="brightnessValue">0</span>
+        </label>
+        <input type="range" id="brightnessSlider" min="-100" max="100" value="0" step="1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>对比度</span>
+          <span class="value" id="contrastValue">0</span>
+        </label>
+        <input type="range" id="contrastSlider" min="-100" max="100" value="0" step="1">
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          <input type="checkbox" id="invertCheckbox">
+          <span>反相</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>字符宽高比</span>
+          <span class="value" id="aspectValue">0.50</span>
+        </label>
+        <input type="range" id="aspectSlider" min="0.2" max="1.0" value="0.5" step="0.05">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span>抖动算法</span></label>
+        <select id="ditherSelect">
+          <option value="none">无</option>
+          <option value="ordered">有序抖动 (Bayer 4×4)</option>
+          <option value="floyd">Floyd-Steinberg</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span>背景</span></label>
+        <select id="bgSelect">
+          <option value="black">黑底白字</option>
+          <option value="white">白底黑字</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          <input type="checkbox" id="trimCheckbox" checked>
+          <span>裁掉行尾空格</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span>换行符</span></label>
+        <select id="eolSelect">
+          <option value="lf">\n (LF)</option>
+          <option value="crlf">\r\n (CRLF)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <button class="btn" id="resetBtn" style="text-align:center">重置参数</button>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="section">
+      <div class="section-title">导出</div>
+      <button class="btn btn-primary" id="copyBtn" disabled>📋 复制 ASCII 到剪贴板</button>
+      <button class="btn" id="downloadTxtBtn" disabled>
+        💾 下载 .txt <span class="btn-label">源文件，可编辑</span>
+      </button>
+      <button class="btn" id="downloadPngBtn" disabled>
+        🖼️ 下载 .png <span class="btn-label">仅预览，编辑请用 TXT</span>
+      </button>
+      <button class="btn" id="downloadSvgBtn" disabled>
+        📄 下载 .svg <span class="btn-label">内嵌文本，可复制</span>
+      </button>
+    </div>
+
+    <!-- Info Notes -->
+    <div class="info-notes">
+      <strong>TXT</strong> 是源文件：可编辑、可复制、可版本管理。<br>
+      <strong>PNG</strong> 是效果预览图：用于分享展示，不用于再转回 ASCII。<br>
+      <strong>SVG</strong> 内嵌文本：兼顾显示效果和可复制性。<br>
+      <strong>所有处理在浏览器本地完成，不上传图片。</strong>
+    </div>
+
+  </aside>
+
+  <!-- ==================== Right Preview ==================== -->
+  <main class="main">
+    <div class="preview-header">
+      <span>预览区（等宽字体）</span>
+      <span class="stats" id="stats">未加载</span>
+    </div>
+    <div class="preview-container">
+      <pre id="preview" class="placeholder">请上传图片以生成 ASCII 字符画<br>支持拖拽、点击选择、Ctrl+V 粘贴</pre>
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+/* ================================================================
+ * 1. 常量定义
+ * ================================================================ */
+
+/** 字符集预设：从最疏（暗）到最密（亮）排列 */
+const CHARSET_PRESETS = {
+  classic:  ' .:-=+*#%@',
+  detailed: ' .,:;irsXA253hMHGS#9B&@',
+};
+
+/** Bayer 4×4 有序抖动矩阵 */
+const BAYER_4X4 = [
+  [ 0,  8,  2, 10],
+  [12,  4, 14,  6],
+  [ 3, 11,  1,  9],
+  [15,  7, 13,  5],
+];
+
+/** 默认参数 */
+const DEFAULT_PARAMS = {
+  width: 80,
+  charset: 'classic',
+  customCharset: ' .:-=+*#%@',
+  brightness: 0,
+  contrast: 0,
+  invert: false,
+  charAspect: 0.5,
+  dither: 'none',
+  bg: 'black',
+  trimTrailing: true,
+  eol: 'lf',
+};
+
+/** PNG/SVG 导出字体 */
+const EXPORT_FONT_FAMILY = "'Courier New', 'Consolas', 'Monaco', 'Lucida Console', monospace";
+const EXPORT_FONT_SIZE   = 16;
+
+/* ================================================================
+ * 2. 应用状态
+ * ================================================================ */
+const state = {
+  image: null,       // HTMLImageElement
+  imageName: '',     // 文件名
+  ascii: '',         // 当前 ASCII 输出（行分隔为 \n）
+  cols: 0,
+  rows: 0,
+  params: { ...DEFAULT_PARAMS },
+};
+
+/* ================================================================
+ * 3. DOM 元素引用
+ * ================================================================ */
+const $ = (id) => document.getElementById(id);
+const els = {
+  uploadArea:       $('uploadArea'),
+  fileInput:        $('fileInput'),
+  imageInfo:        $('imageInfo'),
+  filename:         $('filename'),
+  clearImageBtn:    $('clearImageBtn'),
+  widthSlider:      $('widthSlider'),
+  widthValue:       $('widthValue'),
+  charsetSelect:    $('charsetSelect'),
+  customCharsetGroup: $('customCharsetGroup'),
+  customCharsetInput: $('customCharsetInput'),
+  brightnessSlider: $('brightnessSlider'),
+  brightnessValue:  $('brightnessValue'),
+  contrastSlider:   $('contrastSlider'),
+  contrastValue:    $('contrastValue'),
+  invertCheckbox:   $('invertCheckbox'),
+  aspectSlider:     $('aspectSlider'),
+  aspectValue:      $('aspectValue'),
+  ditherSelect:     $('ditherSelect'),
+  bgSelect:         $('bgSelect'),
+  trimCheckbox:     $('trimCheckbox'),
+  eolSelect:        $('eolSelect'),
+  resetBtn:         $('resetBtn'),
+  copyBtn:          $('copyBtn'),
+  downloadTxtBtn:   $('downloadTxtBtn'),
+  downloadPngBtn:   $('downloadPngBtn'),
+  downloadSvgBtn:   $('downloadSvgBtn'),
+  preview:          $('preview'),
+  stats:            $('stats'),
+};
+
+/* ================================================================
+ * 4. 工具函数
+ * ================================================================ */
+
+/** 将值限制在 [min, max] 范围内 */
+function clamp(v, min, max) {
+  return v < min ? min : (v > max ? max : v);
+}
+
+/** 过滤非 ASCII 可打印字符 (0x20–0x7E)，并去重 */
+function sanitizeCharset(str) {
+  const seen = new Set();
+  let result = '';
+  for (const ch of str) {
+    const code = ch.charCodeAt(0);
+    if (code >= 0x20 && code <= 0x7E && !seen.has(ch)) {
+      seen.add(ch);
+      result += ch;
+    }
+  }
+  return result;
+}
+
+/** 获取当前生效的字符集 */
+function getCharset(params) {
+  let cs;
+  if (params.charset === 'custom') {
+    cs = sanitizeCharset(params.customCharset);
+    if (cs.length < 2) cs = CHARSET_PRESETS.classic; // 回退
+  } else {
+    cs = CHARSET_PRESETS[params.charset] || CHARSET_PRESETS.classic;
+  }
+  return cs;
+}
+
+/** XML 特殊字符转义 */
+function escapeXml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** 触发文件下载 */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/** 下载文本文件 */
+function downloadText(text, filename, mime) {
+  const blob = new Blob([text], { type: mime || 'text/plain' });
+  downloadBlob(blob, filename);
+}
+
+/* ================================================================
+ * 5. Toast 通知
+ * ================================================================ */
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 1800);
+}
+
+/* ================================================================
+ * 6. 图片加载
+ * ================================================================ */
+
+/** 从 File 对象加载图片 */
+function loadImageFromFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('请选择有效的图片文件', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      state.image = img;
+      state.imageName = file.name;
+      els.filename.textContent = `${file.name}  (${img.width}×${img.height})`;
+      els.imageInfo.classList.add('show');
+      enableButtons(true);
+      regenerate();
+    };
+    img.onerror = () => showToast('图片加载失败', 'error');
+    img.src = e.target.result;
+  };
+  reader.onerror = () => showToast('文件读取失败', 'error');
+  reader.readAsDataURL(file);
+}
+
+/** 清除当前图片 */
+function clearImage() {
+  state.image = null;
+  state.imageName = '';
+  state.ascii = '';
+  state.cols = 0;
+  state.rows = 0;
+  els.imageInfo.classList.remove('show');
+  els.fileInput.value = '';
+  enableButtons(false);
+  showPlaceholder();
+}
+
+/* ================================================================
+ * 7. 图像处理核心
+ * ================================================================ */
+
+/**
+ * 从图片生成 ASCII 字符画。
+ * @param {HTMLImageElement} img  源图片
+ * @param {object} params         参数对象
+ * @returns {{ascii: string, cols: number, rows: number}}
+ */
+function generateAscii(img, params) {
+  // --- 7.1 计算输出尺寸 ---
+  const cols = params.width;
+  const rows = Math.max(1, Math.round(cols * params.charAspect * (img.height / img.width)));
+
+  // --- 7.2 缩放绘制到小 Canvas，获取每格平均像素 ---
+  const canvas = document.createElement('canvas');
+  canvas.width  = cols;
+  canvas.height = rows;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, cols, rows);
+
+  const imageData = ctx.getImageData(0, 0, cols, rows);
+  const px = imageData.data;
+  const N  = cols * rows;
+  const gray = new Float32Array(N);
+
+  // --- 7.3 灰度计算（含 alpha 混合到背景） ---
+  const bgGray = params.bg === 'black' ? 0 : 255;
+  for (let i = 0; i < N; i++) {
+    const r = px[i * 4];
+    const g = px[i * 4 + 1];
+    const b = px[i * 4 + 2];
+    const a = px[i * 4 + 3] / 255;
+    let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    lum = lum * a + bgGray * (1 - a); // 透明部分混合到背景
+    gray[i] = lum;
+  }
+
+  // --- 7.4 亮度调整 ---
+  const bAdd = params.brightness * 2.55;
+  if (bAdd !== 0) {
+    for (let i = 0; i < N; i++) gray[i] = clamp(gray[i] + bAdd, 0, 255);
+  }
+
+  // --- 7.5 对比度调整 ---
+  if (params.contrast !== 0) {
+    const cFactor = 1 + params.contrast / 100;
+    for (let i = 0; i < N; i++) gray[i] = clamp((gray[i] - 128) * cFactor + 128, 0, 255);
+  }
+
+  // --- 7.6 反相 ---
+  if (params.invert) {
+    for (let i = 0; i < N; i++) gray[i] = 255 - gray[i];
+  }
+
+  // --- 7.7 抖动 ---
+  const charset = getCharset(params);
+  const levels  = charset.length;
+
+  if (params.dither === 'ordered') {
+    orderedDither(gray, cols, rows, levels);
+  } else if (params.dither === 'floyd') {
+    floydSteinbergDither(gray, cols, rows, levels);
+  }
+
+  // --- 7.8 字符映射 ---
+  const isBlackBg = params.bg === 'black';
+  const lastIdx = levels - 1;
+  const chars = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const v = clamp(gray[i], 0, 255);
+    let idx;
+    if (isBlackBg) {
+      // 黑底白字：暗→space(0), 亮→@(last)
+      idx = Math.round(v / 255 * lastIdx);
+    } else {
+      // 白底黑字：暗→@(last), 亮→space(0)
+      idx = Math.round((255 - v) / 255 * lastIdx);
+    }
+    chars[i] = charset[clamp(idx, 0, lastIdx)];
+  }
+
+  // --- 7.9 拼装字符串 ---
+  const parts = [];
+  for (let y = 0; y < rows; y++) {
+    let line = '';
+    const base = y * cols;
+    for (let x = 0; x < cols; x++) line += chars[base + x];
+    if (params.trimTrailing) line = line.replace(/\s+$/, '');
+    parts.push(line);
+  }
+  return { ascii: parts.join('\n'), cols, rows };
+}
+
+/**
+ * 有序抖动（Bayer 4×4）。
+ * 在每个像素上叠加一个与位置相关的阈值偏移，使量化边界产生规则噪点。
+ */
+function orderedDither(data, cols, rows, levels) {
+  const step = 255 / (levels - 1);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const t = (BAYER_4X4[y & 3][x & 3] / 16 - 0.5) * step;
+      data[y * cols + x] += t;
+    }
+  }
+}
+
+/**
+ * Floyd-Steinberg 误差扩散抖动。
+ * 逐像素量化到最近字符级别，将量化误差按 7:3:5:1 比例扩散到右、下左、下、下右邻居。
+ */
+function floydSteinbergDither(data, cols, rows, levels) {
+  const step = 255 / (levels - 1);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+      const oldVal = data[idx];
+      const newVal = Math.round(oldVal / step) * step;
+      data[idx] = newVal;
+      const err = oldVal - newVal;
+      if (x + 1 < cols)            data[idx + 1]         += err * 7 / 16;
+      if (y + 1 < rows) {
+        if (x > 0)                 data[idx + cols - 1]  += err * 3 / 16;
+                                  data[idx + cols]      += err * 5 / 16;
+        if (x + 1 < cols)         data[idx + cols + 1]  += err * 1 / 16;
+      }
+    }
+  }
+}
+
+/* ================================================================
+ * 8. 预览更新
+ * ================================================================ */
+
+function showPlaceholder() {
+  els.preview.className = 'placeholder';
+  els.preview.innerHTML = '请上传图片以生成 ASCII 字符画<br>支持拖拽、点击选择、Ctrl+V 粘贴';
+  els.stats.textContent = '未加载';
+}
+
+function updatePreview() {
+  const isBlackBg = state.params.bg === 'black';
+  els.preview.className = '';
+  els.preview.textContent = state.ascii;
+  els.preview.style.backgroundColor = isBlackBg ? '#000' : '#fff';
+  els.preview.style.color           = isBlackBg ? '#fff' : '#000';
+  // 统计
+  const charCount = state.ascii.length;
+  els.stats.textContent = `尺寸: ${state.cols} × ${state.rows}  |  字符数: ${charCount}`;
+}
+
+/* ================================================================
+ * 9. 重新生成（参数变化时调用）
+ * ================================================================ */
+function regenerate() {
+  if (!state.image) return;
+  const result = generateAscii(state.image, state.params);
+  state.ascii = result.ascii;
+  state.cols  = result.cols;
+  state.rows  = result.rows;
+  updatePreview();
+}
+
+/* ================================================================
+ * 10. 导出功能
+ * ================================================================ */
+
+/** 导出 TXT */
+function exportTxt() {
+  if (!state.ascii) return;
+  let text = state.ascii;
+  if (state.params.eol === 'crlf') {
+    text = text.replace(/\n/g, '\r\n');
+  }
+  downloadText(text, 'ascii-art.txt', 'text/plain;charset=ascii');
+  showToast('TXT 已下载', 'success');
+}
+
+/**
+ * 导出 PNG。
+ * 用离屏 Canvas，按预览同样的字符、字体、行高、颜色绘制。
+ */
+function exportPng() {
+  if (!state.ascii) return;
+  const lines = state.ascii.split('\n');
+  const rows  = lines.length;
+
+  // 测量字符宽度
+  const mCanvas = document.createElement('canvas');
+  const mCtx    = mCanvas.getContext('2d');
+  mCtx.font = `${EXPORT_FONT_SIZE}px ${EXPORT_FONT_FAMILY}`;
+  const charWidth = mCtx.measureText('M').width;
+  const charHeight = EXPORT_FONT_SIZE; // line-height = 1
+
+  // 找最大列数（裁剪后各行长度可能不同）
+  let maxCols = 0;
+  for (const line of lines) maxCols = Math.max(maxCols, line.length);
+
+  const W = Math.ceil(maxCols * charWidth) + 1;
+  const H = Math.ceil(rows * charHeight) + 1;
+
+  // 创建导出 Canvas
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const isBlackBg = state.params.bg === 'black';
+  const bgColor = isBlackBg ? '#000000' : '#FFFFFF';
+  const fgColor = isBlackBg ? '#FFFFFF' : '#000000';
+
+  // 填充背景
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // 绘制文本
+  ctx.font = `${EXPORT_FONT_SIZE}px ${EXPORT_FONT_FAMILY}`;
+  ctx.fillStyle = fgColor;
+  ctx.textBaseline = 'top';
+
+  for (let y = 0; y < rows; y++) {
+    ctx.fillText(lines[y], 0, y * charHeight);
+  }
+
+  canvas.toBlob((blob) => {
+    downloadBlob(blob, 'ascii-art.png');
+    showToast('PNG 已下载（仅预览图）', 'success');
+  }, 'image/png');
+}
+
+/**
+ * 导出 SVG。
+ * 每行用一个 <text> 元素，指定等宽字体，保留可复制文本。
+ * 使用 xml:space="preserve" 保留空格。
+ */
+function exportSvg() {
+  if (!state.ascii) return;
+  const lines = state.ascii.split('\n');
+  const rows  = lines.length;
+
+  // 测量字符宽度
+  const mCanvas = document.createElement('canvas');
+  const mCtx    = mCanvas.getContext('2d');
+  mCtx.font = `${EXPORT_FONT_SIZE}px ${EXPORT_FONT_FAMILY}`;
+  const charWidth = mCtx.measureText('M').width;
+  const charHeight = EXPORT_FONT_SIZE;
+
+  let maxCols = 0;
+  for (const line of lines) maxCols = Math.max(maxCols, line.length);
+
+  const W = Math.ceil(maxCols * charWidth);
+  const H = Math.ceil(rows * charHeight);
+
+  const isBlackBg = state.params.bg === 'black';
+  const bgColor = isBlackBg ? '#000000' : '#FFFFFF';
+  const fgColor = isBlackBg ? '#FFFFFF' : '#000000';
+
+  // 构建 SVG
+  const parts = [];
+  parts.push('<?xml version="1.0" encoding="UTF-8"?>');
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  parts.push(`  <rect width="${W}" height="${H}" fill="${bgColor}"/>`);
+  parts.push(`  <g font-family="${EXPORT_FONT_FAMILY}" font-size="${EXPORT_FONT_SIZE}" fill="${fgColor}" xml:space="preserve">`);
+
+  for (let y = 0; y < rows; y++) {
+    const yPos = (y + 1) * charHeight; // 基线在行底
+    parts.push(`    <text x="0" y="${yPos.toFixed(2)}">${escapeXml(lines[y])}</text>`);
+  }
+
+  parts.push('  </g>');
+  parts.push('</svg>');
+
+  downloadText(parts.join('\n'), 'ascii-art.svg', 'image/svg+xml');
+  showToast('SVG 已下载', 'success');
+}
+
+/* ================================================================
+ * 11. 剪贴板复制
+ * ================================================================ */
+async function copyAscii() {
+  if (!state.ascii) return;
+  try {
+    await navigator.clipboard.writeText(state.ascii);
+    showToast('已复制到剪贴板', 'success');
+  } catch {
+    // 回退方案
+    const ta = document.createElement('textarea');
+    ta.value = state.ascii;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('已复制到剪贴板', 'success');
+    } catch {
+      showToast('复制失败，请手动选择文本复制', 'error');
+    }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ================================================================
+ * 12. UI 辅助
+ * ================================================================ */
+
+function enableButtons(enabled) {
+  els.copyBtn.disabled        = !enabled;
+  els.downloadTxtBtn.disabled = !enabled;
+  els.downloadPngBtn.disabled = !enabled;
+  els.downloadSvgBtn.disabled = !enabled;
+}
+
+/** 从 DOM 读取参数到 state.params */
+function readParamsFromUI() {
+  const p = state.params;
+  p.width         = parseInt(els.widthSlider.value, 10);
+  p.charset       = els.charsetSelect.value;
+  p.customCharset = els.customCharsetInput.value;
+  p.brightness    = parseInt(els.brightnessSlider.value, 10);
+  p.contrast      = parseInt(els.contrastSlider.value, 10);
+  p.invert        = els.invertCheckbox.checked;
+  p.charAspect    = parseFloat(els.aspectSlider.value);
+  p.dither        = els.ditherSelect.value;
+  p.bg            = els.bgSelect.value;
+  p.trimTrailing  = els.trimCheckbox.checked;
+  p.eol           = els.eolSelect.value;
+}
+
+/** 将 state.params 同步到 UI 显示 */
+function syncUIText() {
+  els.widthValue.textContent      = state.params.width;
+  els.brightnessValue.textContent = state.params.brightness;
+  els.contrastValue.textContent   = state.params.contrast;
+  els.aspectValue.textContent     = state.params.charAspect.toFixed(2);
+  // 自定义字符集面板显隐
+  els.customCharsetGroup.style.display =
+    state.params.charset === 'custom' ? '' : 'none';
+}
+
+/** 重置参数到默认 */
+function resetParams() {
+  state.params = { ...DEFAULT_PARAMS };
+  els.widthSlider.value         = DEFAULT_PARAMS.width;
+  els.charsetSelect.value       = DEFAULT_PARAMS.charset;
+  els.customCharsetInput.value  = DEFAULT_PARAMS.customCharset;
+  els.brightnessSlider.value    = DEFAULT_PARAMS.brightness;
+  els.contrastSlider.value      = DEFAULT_PARAMS.contrast;
+  els.invertCheckbox.checked    = DEFAULT_PARAMS.invert;
+  els.aspectSlider.value        = DEFAULT_PARAMS.charAspect;
+  els.ditherSelect.value        = DEFAULT_PARAMS.dither;
+  els.bgSelect.value            = DEFAULT_PARAMS.bg;
+  els.trimCheckbox.checked      = DEFAULT_PARAMS.trimTrailing;
+  els.eolSelect.value           = DEFAULT_PARAMS.eol;
+  syncUIText();
+  regenerate();
+  showToast('参数已重置');
+}
+
+/* ================================================================
+ * 13. 事件监听
+ * ================================================================ */
+
+function setupEvents() {
+  // --- 上传：点击 ---
+  els.uploadArea.addEventListener('click', () => els.fileInput.click());
+  els.fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) loadImageFromFile(e.target.files[0]);
+  });
+
+  // --- 上传：拖拽 ---
+  els.uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    els.uploadArea.classList.add('drag-over');
+  });
+  els.uploadArea.addEventListener('dragleave', () => {
+    els.uploadArea.classList.remove('drag-over');
+  });
+  els.uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    els.uploadArea.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) loadImageFromFile(file);
+  });
+
+  // --- 上传：粘贴 ---
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) loadImageFromFile(file);
+        break;
+      }
+    }
+  });
+
+  // --- 清除图片 ---
+  els.clearImageBtn.addEventListener('click', clearImage);
+
+  // --- 参数变化 ---
+  const onParamChange = () => {
+    readParamsFromUI();
+    syncUIText();
+    regenerate();
+  };
+
+  els.widthSlider.addEventListener('input', onParamChange);
+  els.charsetSelect.addEventListener('change', onParamChange);
+  els.customCharsetInput.addEventListener('input', onParamChange);
+  els.brightnessSlider.addEventListener('input', onParamChange);
+  els.contrastSlider.addEventListener('input', onParamChange);
+  els.invertCheckbox.addEventListener('change', onParamChange);
+  els.aspectSlider.addEventListener('input', onParamChange);
+  els.ditherSelect.addEventListener('change', onParamChange);
+  els.bgSelect.addEventListener('change', onParamChange);
+  els.trimCheckbox.addEventListener('change', onParamChange);
+  els.eolSelect.addEventListener('change', onParamChange);
+
+  // --- 重置 ---
+  els.resetBtn.addEventListener('click', resetParams);
+
+  // --- 导出按钮 ---
+  els.copyBtn.addEventListener('click', copyAscii);
+  els.downloadTxtBtn.addEventListener('click', exportTxt);
+  els.downloadPngBtn.addEventListener('click', exportPng);
+  els.downloadSvgBtn.addEventListener('click', exportSvg);
+
+  // --- 阻止拖拽默认行为（防止浏览器打开图片） ---
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => e.preventDefault());
+}
+
+/* ================================================================
+ * 14. 初始化
+ * ================================================================ */
+function init() {
+  setupEvents();
+  syncUIText();
+  showPlaceholder();
+}
+
+init();
+</script>
+</body>
+</html>
