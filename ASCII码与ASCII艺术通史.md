@@ -781,3 +781,12 @@ stickystyle 的 ZorkGPT 让 LLM 自主玩 Zork I——纯靠推理探索世界�
 82. **Don Woods** — https://en.wikipedia.org/wiki/Don_Woods_(programmer)
 83. **textmode.js editor** — https://editor.textmode.art
 84. **Blocktronics 官网** — http://blocktronics.org/
+85. **The Interactive Fiction Archive (IF Archive)** — https://ifarchive.org/
+    - 按日期索引（近三个月）: https://ukrestrict.ifarchive.org/indexes/datev_3.html
+    - 完整存档入口: https://ukrestrict.ifarchive.org/indexes/if-archive
+    - RSS 订阅: https://ukrestrict.ifarchive.org/indexes/archive.rss
+    - 内容涵盖: 文字冒险游戏文件（.z3/.z5/.z8/.gblorb）、Z-Machine 解释器（Frotz/Glulxe/Bocfel）、Inform 编译器源码、游戏攻略、IFWiki 快照、IFDB 数据导出、Twine 游戏、Competition 作品集
+86. **IFDB (Interactive Fiction Database)** — https://ifdb.org/
+    - 互动小说游戏数据库，含评分、评论、标签、推荐
+87. **IFWiki (Interactive Fiction Wiki)** — https://www.ifwiki.org/
+    - 互动小说百科全书，涵盖游戏、工具、历史、人物
