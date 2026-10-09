@@ -64,25 +64,67 @@ Bemer 后来被称为 **"ASCII 之父"**。他不仅推动了 ASCII 的诞生，
 | 1986 | ANSI X3.4-1986（最终版） |
 | 2015 | RFC 20 正式升格为互联网标准 |
 
-### 1.4 ASCII 的设计哲学
+### 1.4 委员会政治——6 位 vs 7 位 vs 8 位之争
 
-ASCII 的设计体现了几个关键决策：
+ASCII 的诞生远非一帆风顺。X3.2.4 工作组的成员们围绕编码位数展开了激烈的辩论：
 
-1. **7 位编码**：128 个字符（0–127），在当时是最小的能容纳大小写字母+数字+标点+控制字符的编码
-2. **大小写仅差一位**：`A`(65) 和 `a`(97) 的二进制仅第 6 位不同，极大简化了大小写转换和键盘设计
-3. **便于排序**：字母按字母表顺序排列（不像 EBCDIC 那样字母顺序混乱），方便列表排序
-4. **控制字符在前**：0–31 为控制字符，32–126 为可打印字符，分离清晰
-5. **转义字符**：ESC（27）为扩展提供了无限可能
+**6 位方案的诱惑**：ITA2 使用 shift function（移位功能）允许 6 位编码表示超过 64 个字符——某些字符码决定后续字符的选择。这种编码紧凑，但致命弱点是**传输可靠性**：如果移位码在传输中出错，后续大量数据将全部不可读。委员会最终否决了移位方案。
 
-### 1.5 ASCII 的第一个商业应用
+**8 位方案的吸引力**：8 位（一个字节）可以高效地用两个 4 位模式以 BCD 编码两个数字。但问题在于——所有数据传输都必须发送 8 位，而 7 位就足够了。在 1960 年代，传输带宽极其昂贵，每多传一位都是真金白银的成本。委员会投票决定使用 **7 位编码**以最小化传输成本。
+
+**第 8 位的巧妙利用**：穿孔纸带当时可以在一个位置记录 8 位，因此第 8 位可以用作 **parity bit（奇偶校验位）**进行错误检查。不使用奇偶校验的 8 位机器通常将第 8 位设为 0——这就是后来"扩展 ASCII"（128–255）得以存在的技术基础。
+
+### 1.5 ASCII 的设计哲学——每个位置都有理由
+
+ASCII 的布局绝非随意，每个字符的位置都经过精心设计：
+
+1. **控制字符在前 32 位**：0–31 为控制字符，32–126 为可打印字符，分离清晰。控制字符的位模式之间**最大化了 Hamming distance**，减少传输错误导致的歧义。
+
+2. **大小写仅差一位**：`A`(65, 1000001) 和 `a`(97, 1100001) 的二进制仅第 6 位不同。这是 CCITT 在 1963 年 5 月提议将小写字母放入第 6、7 列（"sticks"）的结果——简化了大小写不敏感匹配、键盘和打印机的构造。
+
+3. **字母按字母表顺序排列**：不像 EBCDIC 那样字母顺序混乱，ASCII 的字母排列方便列表排序（collation）。
+
+4. **数字 0–9 前缀 011**：后 4 位直接对应二进制值（如 5 = 0110101，其中 0101 = 5），使 BCD 转换极其简单。
+
+5. **字母 A 放在 0x41**：为了匹配英国标准草案中的对应位置。
+
+6. **非字母数字字符对应机械打字机**：符号位置基于 **Remington No. 2**（1878 年，第一台有 shift 键的打字机）的 shift 位置，而非电动打字机。早期打字机甚至省略了 0 和 1，用大写 O 和小写 l 代替。
+
+7. **@ 符号放在 0x40**：委员会认为 @ 在欧洲大陆不使用，预期会被国际变体中的重音字母 À 替换。事实证明这个判断完全错误——@ 后来成为了电子邮件的核心符号。
+
+8. **ESC（27）转义字符**：Bemer 引入的转义字符为编码扩展提供了无限可能，后来成为 ANSI 转义序列的基础——今天终端彩色输出和光标控制全部依赖它。
+
+### 1.6 SHARE 事件——IBM 用户组的最后通牒
+
+就在 ASCII 标准即将发布的最后关头，一场政治风暴突然降临。**SHARE**（IBM 用户组）主席向 X3.2.4 工作组发来了一封措辞激烈的信件（vitriolic letter），威胁说如果不修改标准草案，程序员们将创建自己的竞争标准，ASCII 将因缺乏采用而面临 peril。
+
+面对这一威胁，委员会做出了妥协：移动了一些字符的位置，在 `|`（竖线）字符中间加了断点（看看你的键盘上的 `|`——它中间有个缝隙，这就是 1967 年妥协的遗产）。
+
+1967 年，ASCII 与 **ECMA**（欧洲计算机制造商协会）和 **ISO** 联合发布。ECMA 发布为 **ECMA-6**，ISO 发布为 **ISO-646**——ISO 版用国际货币符号 ¤ 替换了美元符号 $。
+
+### 1.7 ASCII 的第一个商业应用
 
 ASCII 于 1963 年首次商用，作为 AT&T 的 **TWX（TeletypeWriter eXchange）** 网络的 7 位电传打字机编码。TWX 原先使用 5 位 ITA2 编码（与 Telex 竞争系统相同）。
 
-最影响 ASCII 字符解释的单一设备是 **ASR-33 Teletype**（1963 年发布），它定义了 Ctrl-Q（XON）、Ctrl-S（XOFF）等事实标准，这些控制码至今仍在使用。
+最影响 ASCII 字符解释的单一设备是 **ASR-33 Teletype**（1963 年发布），它定义了 Ctrl-Q（XON，码 17）、Ctrl-S（XOFF，码 19）和 DEL（码 127）等事实标准。ASR-33 的 O 键帽上还显示了一个左箭头符号（来自 ASCII-1963，当时这个位置是左箭头而非下划线），导致很多早期分时系统非标准地将 Ctrl-O 解释为"删除前一个字符"。
 
-### 1.6 ASCII 的对手——EBCDIC
+Ctrl-S/Ctrl-Q 的流控协议至今仍在使用——当发送方收到 XOFF 时停止传输以防溢出，收到 XON 时恢复发送。
 
-1964 年，IBM 发布了划时代的 **System/360**，但开发团队负责人 Frederick Brooks 决定使用 **EBCDIC**（8 位编码，256 字符）而非 ASCII——因为当时的穿孔卡片和打印机还不支持 ASCII。这导致 ASCII 花了 **18 年**才在 IBM PC（1981）上成为标准。EBCDIC 至今仍在某些 IBM 大型机上使用。
+### 1.8 ASCII 的对手——EBCDIC
+
+1964 年，IBM 发布了划时代的 **System/360**，但开发团队负责人 **Frederick Brooks** 决定使用 **EBCDIC**（8 位编码，256 字符）而非 ASCII——因为当时的穿孔卡片和打印机还不支持 ASCII。EBCDIC 由 IBM 的 **Charles E. McKenzie** 从 6 位 BCDIC 扩展而来。
+
+X3.2.4 委员会**断然拒绝了** IBM 的 EBCDIC 方案。但 IBM 的市场影响力意味着 EBCDIC 在大型机领域存活至今——这导致 ASCII 花了 **18 年**才在 IBM PC（1981）上成为 PC 标准。
+
+直到 1981 年 IBM PC 发布，ASCII 才真正成为主流——IBM PC 的 ROM 中烧录了 **Code Page 437**，前 128 个字符是标准 ASCII，后 128 个是扩展字符（框线、块字符、希腊字母等）。CP437 的扩展字符后来为 ANSI 艺术提供了关键的表现力。
+
+### 1.9 约翰逊总统令——ASCII 成为联邦标准
+
+1968 年 3 月 11 日，美国总统**林登·B·约翰逊**签署备忘录，强制所有联邦政府计算机支持 ASCII：
+
+> "All computers and related equipment configurations brought into the Federal Government inventory on and after July 1, 1969, must have the capability to use the Standard Code for Information Interchange..."
+
+这是 ASCII 走向普遍采用的关键一步。但即便有总统令，ASCII 的全面普及仍花了十多年——直到 1981 年 IBM PC 才真正让 ASCII 成为事实标准。
 
 ---
 
@@ -90,19 +132,25 @@ ASCII 于 1963 年首次商用，作为 AT&T 的 **TWX（TeletypeWriter eXchange
 
 ### 2.1 摩尔斯码（1844）
 
-Samuel Morse 发明的电报编码，用点和划表示字母。这是最早的"字符编码"概念，但不是数字编码。
+Samuel Morse 发明的电报编码，用点和划表示字母。这是最早的"字符编码"概念，但不是数字编码。有趣的是，摩尔斯码中已经包含了"表情符号"的雏形——1857 年的 *National Telegraphic Review and Operators Guide* 记录了用数字 73 表示"爱与吻"（后来缩减为更正式的"致以敬意"）。
 
-### 2.2 Baudot 码（1870）
+### 2.2 Baudot 码（1870/1874）
 
-Émile Baudot 发明的 5 位编码，32 个字符。使用 ITA2 国际标准版本。不支持小写字母，只有大写字母、数字和少量标点。是 RTTY（无线电电传打字）的标准编码，直到 1980 年 FCC 才授权美国业余无线电操作员使用 ASCII。
+**Émile Baudot**（法国工程师）于 1870 年发明、1874 年获得专利的 5 位编码，32 个字符。使用 ITA2 国际标准版本（1932 年 CCITT 发布）。Baudot 码不支持小写字母，只有大写字母、数字和少量标点。它使用 shift function 在字母和数字/标点之间切换——正是这一机制后来被 ASCII 委员会讨论并否决。
 
-### 2.3 IBM BCD / EBCDIC（1962）
+Baudot 码是 RTTY（无线电电传打字）的标准编码，直到 1980 年 3 月 FCC 才授权美国业余无线电操作员使用 ASCII 替代 Baudot 码。
 
-IBM 的 6 位 BCD 和 8 位 EBCDIC 编码。EBCDIC 是 ASCII 最大的竞争对手，最终在 PC 市场败给 ASCII，但在大型机领域存活至今。
+### 2.3 FIELDATA（1956）
 
-### 2.4 编码统一的必要性
+美国陆军信号研究与发展实验室的 **Captain William F. Luebbert** 发明的 6 位编码，被美国陆军广泛用于通信。FIELDATA 在历史上很重要——它直接启发了后来发明 ASCII 的委员会。
 
-到 1960 年，超过 60 种编码并存。Bemer 在 1960 年的调查中记录了这一混乱局面，这是推动 ASCII 诞生的直接动力。
+### 2.4 IBM BCD / EBCDIC（1962）
+
+IBM 的 6 位 BCD（Binary-Coded Decimal）用于穿孔卡片机器。当穿孔卡片被 System/360 大型机取代时，IBM 的 **Charles E. McKenzie** 将其扩展为 8 位 **EBCDIC**（Extended BCD Interchange Code）。EBCDIC 是 ASCII 最大的竞争对手，最终在 PC 市场败给 ASCII，但在大型机领域存活至今。
+
+### 2.5 编码统一的必要性
+
+到 1960 年，超过 60 种编码并存。Bemer 在 1960 年 12 月的 *Communications of the ACM* 上发表了一篇编码调查，记录了这一混乱局面。他在论文"A Proposal for Character Code Compatibility"中呼吁建立统一标准——这是推动 ASCII 诞生的直接动力。
 
 ---
 
@@ -171,61 +219,105 @@ Jefferson Computer Museum 的 "Ancient Alphabetic Art" 项目收藏了 Ken Simps
 
 ## 第五章：计算机 ASCII 艺术的诞生（1960s–1970s）
 
-### 5.1 Kenneth Knowlton 与 Bell Labs（1966）
+### 5.1 Kenneth Knowlton 与 Bell Labs——一切开始的地方
 
-**目前已知最早的计算机 ASCII 艺术作品**由计算机艺术先驱 **Kenneth Knowlton** 于 **1966 年**左右在 Bell Labs 创作。他与 **Leon Harmon** 合作的 "Studies in Perception I"（1966）展示了早期的 ASCII 艺术例子。
+**Kenneth C. Knowlton**（1931–2022），MIT 电气工程博士，1963 年加入 Bell Labs（位于新泽西州 Murray Hill），一直工作到 1982 年。他是计算机图形学和计算机艺术的真正先驱。
 
-他们的方法：将照片降采样为灰度网格，每个灰度值映射到一个字符，在行式打印机上输出。
+1963 年，Knowlton 发明了 **BEFLIX**（"Bell Flicks"的缩写）——**第一个用于计算机动画的领域专用编程语言**。BEFLIX 运行在 IBM 7094 大型机上，通过 **Stromberg-Carlson SC-4020 微缩胶片绘图仪** 输出图像。每帧包含 8 级灰度，分辨率为 252×184 像素。
 
-### 5.2 Computer Nude（1966）
+1963–1964 年，Knowlton 用 BEFLIX 制作了一部 10 分钟的 16mm 无声电影 **"A Computer Technique for the Production of Animated Movies"**——这部电影本身就是关于如何制作这部电影的教程，充满了自引用的幽默。1964 年 4 月，他在 AFIPS Spring Joint Computer Conference 上发表了同名论文。
 
-一个著名的早期作品 **Computer Nude** 在 Bell Labs 的 IBM 7094 上制作（当时价值 200 万美元）。舞者和编舞家 Deborah Hay 的黑白照片被缩减为灰度方格，然后用电话电路图符号填充灰度值。这是最早用计算机生成的"照片级"ASCII 艺术之一。
+Knowlton 在 Bell Labs 期间开发了多个图形编程语言：
+- **BEFLIX**（1963）——位图动画
+- **EXPLOR**——用于 Lillian Schwartz 的动画作品（1968–1974）
+- **SPHERES**——用于 Emmanuel Ghent 的 *Baobab*（1978）
+- **L6**（Laboratories Low-Level Linked List Language）——链表处理语言
 
-### 5.3 Andries van Dam 与 IBM 1403（1960s）
+### 5.2 "Studies in Perception I"——Computer Nude（1967）
 
-1960 年代，**Andries van Dam** 在 IBM 1403 行式打印机上发布了一幅电子电路图。这是最早的行式打印机艺术之一。IBM 1403 使用 EBCDIC 而非 ASCII，但技术原理相同。
+Knowlton 与 Bell Labs 同事 **Leon Harmon**（一位科学家，但自称是"掷硬币决定的"艺术家）合作创作了 **"Studies in Perception I"**（1967），后来被称为 **Computer Nude**——这是最早、也最著名的计算机生成 ASCII 艺术作品之一。
 
-### 5.4 行式打印机艺术的繁荣（1970s）
+创作过程：
+1. 扫描舞者和编舞家 **Deborah Hay** 的黑白照片
+2. 将照片降采样为灰度网格
+3. 将每个灰度值映射到电话电路图中的微缩符号
+4. 在 IBM 7094（当时价值 200 万美元）上处理
+5. 通过 SC-4020 微缩胶片绘图仪输出
 
-1970 年代，行式打印机艺术在整个计算机界繁荣。**Kenneth Knowlton** 以在行式打印机上通过**叠印**（overprinting）多个字符来创建逼真图像而闻名。
+原始打印件 **12 英尺宽**，被 Harmon 和 Knowlton 挂在 Bell Labs 分部执行主任 **Edward E. David Jr.** 的办公室墙上——作为一场恶作剧（prank）。David 外出回来后发现了这个"惊喜"。
+
+这件作品随后在 **Robert Rauschenberg** 的 loft 的一场新闻发布会上展出，并于 **1967 年 10 月 11 日**出现在 *The New York Times* 上。Bell Labs 的公关人员显然决定这不是色情作品，而是"艺术"，并建议 Harmon 和 Knowlton 在任何展示场合都要注明这是 Bell Labs 制作的作品。
+
+1968 年，该作品被收入 **MoMA**（纽约现代艺术博物馆）的展览 **"The Machine as Seen at the End of the Mechanical Age"**，以及伦敦 ICA 的 **"Cybernetic Serendipity"** 展览。
+
+Knowlton 自己在 2005 年将这件作品称为一个 **"sophomoric prank"（幼稚的恶作剧）**。
+
+### 5.3 "Gargoyle"——Studies in Perception III（1967）
+
+同年，Harmon 和 Knowlton 还创作了 **"Gargoyle – Studies in Perception III"**——将巴黎圣母院的一张石像鬼照片数字化为灰度级别，然后为每个灰度值分配不同的 15×15 微缩图像。每张微缩图像本身都是一个小物体——这种"图像中的图像"技术远超同时代的其他作品。
+
+### 5.4 Bell Labs 的艺术合作生态
+
+Bell Labs 在 1960 年代成为计算机艺术的温床，这绝非偶然：
+
+- **Max Mathews** 1961 年在 Bell Labs 合成了 **"Daisy Bell"**（Bicycle Built for Two）——第一首由计算机演唱的歌曲。这首歌后来被 Arthur C. Clarke 引用到 *2001: A Space Odyssey* 中 HAL 9000 的死亡场景。
+- **Stan VanDerBeek** 与 Knowlton 合作 **Poemfields 1–10**（1966–1969）系列计算机动画电影。
+- **Lillian Schwartz** 使用 Knowlton 的 EXPLOR 语言创作了 10 部动画电影（1968–1974）。
+- 电子音乐作曲家 **Laurie Spiegel** 最初是通过 Bell Labs 的窗户看到 Knowlton 和 Schwartz 的作品后，被引入了计算机艺术的世界。
+
+Knowlton 的合作理念：最好的结果是艺术家 **"become their own programmers, getting the whole creative process into one head"**（成为自己的程序员，将整个创作过程放在一个脑袋里）。而工程师则 **"become more complete humans"**（变得更完整的人）。
+
+### 5.5 Andries van Dam 与 IBM 1403（1960s）
+
+1960 年代，**Andries van Dam** 在 IBM 1403 行式打印机上发布了一幅电子电路图——这是最早的行式打印机艺术之一。IBM 1403 使用 EBCDIC 而非 ASCII，但技术原理相同：将图像降采样为字符网格，用不同密度的字符表示不同灰度。
+
+### 5.6 行式打印机艺术的繁荣（1970s）
+
+1970 年代，行式打印机艺术在整个计算机界繁荣。Knowlton 以在行式打印机上通过**叠印**（overprinting）多个字符来创建逼真图像而闻名——这种方法通过在同一位置打印多个字符来叠加灰度效果。
 
 > "Everybody learned how to print a Snoopy banner."
 > ——每个在计算机实验室工作过的人都学会了打印 Snoopy 横幅。
 
 行式打印机艺术的常见主题：
-- **Snoopy**（史努比）——最流行的主题，无数变体
-- **圣诞树**——计算机实验室的圣诞传统
-- **Mona Lisa**——Peterson 的 "Mona by the Numbers"
+- **Snoopy**（史努比）——最流行的主题，无数变体，是许多人进入编程的"入门礼"
+- **圣诞树**——计算机实验室的圣诞传统，"圣诞树从全国各地的计算机实验室的电传打字机中喷出"
+- **Mona Lisa**——Peterson 的 "Mona by the Numbers"，Ted Nelson 在 *Computer Lib / Dream Machines* 中称其为"Lizzie of the line printer"
 - 肖像（华盛顿、林肯、杜鲁门等）
 
-### 5.5 叠印技术（Overprinting）
+### 5.7 叠印技术（Overprinting）
 
 1970–1980 年代流行一种依赖**叠印**的文字艺术：在打印机上输入一个字符，退格，再输入另一个字符——就像在打字机上一样。这在 **PLATO 系统**（约 1973）中发展得尤为成熟，上标和下标允许各种图形效果。一个常见用途是制作表情符号，WOBTAX 和 VICTORY 都能产生令人信服的笑脸。
 
-叠印在打字机上已有先例，但视频终端上字符的低分辨率像素化意味着叠印在这里产生了无缝像素图形，而非可见的重叠字母组合。
+叠印在打字机上已有先例，但视频终端上字符的低分辨率像素化意味着叠印在这里产生了**无缝像素图形**，而非可见的重叠字母组合——这是从打字机艺术到屏幕艺术的过渡技术。
 
-### 5.6 穿孔卡片艺术的分发
+### 5.8 穿孔卡片艺术的分发
 
 ASCII 艺术通过**穿孔卡片组**在大学计算机中心的学生和工程师之间传递：
 
 > "There were some prized card decks that got passed around for producing the art and periodically you would see an example in the computer room or someone's dorm room."
 > ——一位 1970 年代中期的女工程师回忆
 
-由于大量 ASCII 艺术具有色情性质，这些卡片组并不总是对所有人开放分享。
+由于大量 ASCII 艺术具有色情性质（被称为"ASCII porn"），这些卡片组并不总是对所有人开放分享。一位女工程师回忆说，从来没有人主动与她分享过任何卡片组，可能正是因为作品的色情性质。
 
-### 5.7 1970 年代的 ASCII 艺术商业应用
+ASCII 艺术也常被赠送给参观计算机中心的儿童和员工家属。一位女性在 2013 年写信回忆：
+
+> "In 1979, when I was 9 years old, he [her uncle, an IBM employee] gave me a banner for my birthday. It was from the old dot matrix printers. It had a silhouette of Snoopy on the top of his dog house and it said 'Happy Birthday Chimene'. I literally thought it was the coolest thing. This was before home computers and home printers for our family. The letters were made with x or o or maybe dashes. Because my brain had no conceptual framework for the world of computers, I literally wondered if it was created by magic."
+
+### 5.9 1970 年代的 ASCII 艺术商业应用
 
 - **美国购物中心**：1970 年代，美国各大购物中心设有自动亭，用计算机将照片转为 ASCII 艺术印在 T 恤上
 - **伦敦科学博物馆**：提供类似服务，打印 ASCII 肖像
 - **Control Data**：将 Mona Lisa 的 ASCII 版本作为促销材料赠送给客户
 
-### 5.8 最早的互联网 ASCII 艺术
+### 5.10 最早的互联网 ASCII 艺术
 
 ARPANET（1969 年开始）上的电子邮件最初是纯文本——没有图片，更没有动画。ASCII 艺术被用来创建图表和示意图，也用于"好玩"和美化纯文本邮件。
 
 已知最早的互联网 ASCII 艺术作品包括：
 - **"Spy at the Wall"** 系列
 - **"Silly Cows"** 系列——David Bader 编辑的完整原版奶牛集，这些奶牛遍布互联网，被视为"经典"ASCII 艺术
+
+ARPANET 上的不同系统使用不同的行尾约定：TOPS-10/TENEX 用 CR-LF，Multics 用 LF，OS/360 用字符计数+字符且使用 EBCDIC。Telnet 协议为此定义了 **"Network Virtual Terminal"（NVT）**——以 ASCII + CR-LF 作为标准传输格式，每个系统在本地做转换。
 
 ---
 
@@ -268,6 +360,10 @@ BBS 是纯文本环境——早期终端不支持图形显示。系统操作员�
 - 艺术团体定期将最佳作品汇编成 **"artpacks"**（艺术包），以 ZIP 格式在 BBS 上分发
 - 团体之间激烈竞争，推动了艺术质量的飞速提升
 - Artpack 通常包含：ANSI 艺术文件、补充文本文件（团体新闻、成员名单）、有时还有显示软件和 MOD 格式音乐
+- ANSI 艺术与 **warez**（盗版软件）文化紧密相连——ANSI 艺术家为海盗 BBS 创建欢迎画面和 .nfo 文件（信息文件），这些文件伴随着盗版软件发布，用华丽的 ASCII/ANSI 艺术标注破解者（cracker）和发布组（release group）的名称
+
+> "Pirated software, known as 'warez,' was accompanied by ANSI art—a form of flashy hacker graffiti that credited the software crackers responsible."
+> ——Vice, "The Lost Art of Warez"
 
 ### 6.6 衰落与转型（1996–2000s）
 
@@ -275,9 +371,9 @@ BBS 是纯文本环境——早期终端不支持图形显示。系统操作员�
 
 > 到 1990 年代末，地下 ANSI 艺术场景"正在稳步崩溃"。
 
-但 ANSI 艺术没有死亡：
+一些大团体（如 ACiD）决定不再支持 ANSI，转向高分辨率图形。但 ANSI 艺术没有死亡：
 - 开发了 Windows 兼容的绘图工具（ACiDDraw、TundraDraw）
-- 21 世纪继续有新团体出现（如 **Blocktronics**）
+- 21 世纪继续有新团体出现（如 **Blocktronics**，2008 年成立，至今活跃）
 - 老团体复兴（Mistigris、Fire、Lazarus）
 - Demoscene 派对定期举办 ANSI 艺术比赛
 - 新工具持续开发（PabloDraw、Moebius、DurDraw）
@@ -288,15 +384,23 @@ BBS 是纯文本环境——早期终端不支持图形显示。系统操作员�
 
 ### 7.1 ACiD Productions（1990–）
 
-**ACiD** 成立于 **1990 年**，是最早也是最有影响力的 ANSI 艺术团体之一。最初专注于 BBS 的 ANSI 艺术创作。第一个 artpack *The Acquisition* 在 1990 年代早期发布。
+**ACiD** 成立于 **1990 年**，全称最初为 **"ANSI Creators in Demand"**（ANSI 创作者需求），由五位成员创立：**RaD Man**（Christian Wirth）、**Shadow Demon**、**Grimm**、**The Beholder** 和 **Phantom**。
 
-ACiD 的最大竞争对手是 **iCE Advertisements**。
+ACiD 最初专注于为 **warez BBS** 创建 ANSI 艺术——海盗软件的欢迎画面、菜单和 .nfo 文件。第一个 artpack *The Acquisition* 在 1990 年代早期发布。成员从 1990 年的 5 人增长到 2003 年的 **700+**。
+
+ACiD 的最大竞争对手是 **iCE Advertisements**。两大团体的竞争推动了 ANSI 艺术质量的飞速提升。
+
+ACiD 后来扩展到其他艺术媒介：tracker 音乐、demo 编码和多媒体软件开发（如图像查看器）。后来决定不再支持 ANSI，转向更"专业"的高分辨率图形。
 
 ### 7.2 iCE Advertisements（1991–）
 
-**iCE**（Insane Creators Enterprise）于 **1991 年**在加拿大由 Many Axe 创立。与 ACiD 并列为地下计算机艺术场景最突出、最成功的两个团体。
+**iCE**（**Insane Creators Enterprise**）于 **1991 年**在加拿大由 **Many Axe** 创立。与 ACiD 并列为地下计算机艺术场景最突出、最成功的两个团体。iCE 的成员中有些是数字艺术和设计领域的专业人士。
 
-### 7.3 其他重要团体
+### 7.3 第一个 ANSI 艺术团体——Aces of ANSI Art
+
+在 ACiD 和 iCE 之前，第一个主要的 ANSI 艺术团体是 **Aces of ANSI Art（AAA）**。AAA 之后爆发了大量艺术团体，来自美国、加拿大、欧洲甚至中东。
+
+### 7.4 其他重要团体
 
 | 团体 | 成立 | 说明 |
 |------|------|------|
@@ -309,17 +413,19 @@ ACiD 的最大竞争对手是 **iCE Advertisements**。
 | Blocktronics | 2008 | 21 世纪新团体，至今活跃 |
 | Lazarus | — | 复兴团体 |
 
-### 7.4 Artpack 的意义
+### 7.5 Artpack 的意义
 
-Artpack 被认为是早期计算机艺术场景保存如此完好的主要原因之一——每月的 artpack 发布形成了一种归档机制，大量作品因此得以保存。
+Artpack 被认为是早期计算机艺术场景保存如此完好的主要原因之一——每月的 artpack 发布形成了一种归档机制，大量作品因此得以保存。相比之下，其他地下计算机场景（如早期黑客场景）的保存程度远不如 ANSI 艺术场景。
 
-### 7.5 16colo.rs——存档使命
+### 7.6 16colo.rs——存档使命
 
-**16colo.rs**（Sixteen Colors）是最大的在线 ANSI/ASCII artpack 存档，托管数千个发布包，从 1990 年至今。对于许多团体，16colo.rs 上的存档是他们作品唯一幸存的副本。
+**16colo.rs**（Sixteen Colors）是最大的在线 ANSI/ASCII artpack 存档，托管数千个发布包，从 1990 年至今。对于许多团体，16colo.rs 上的存档是他们作品**唯一幸存的副本**。
 
-2004 年，*Dark Domain: The Artpacks.acid.org Collection* 发布——一张 DVD-ROM，包含 ACiD 和其他团体 14 年的 artpack。
+2004 年，*Dark Domain: The Artpacks.acid.org Collection* 发布——一张 DVD-ROM，包含 ACiD 和其他团体 **14 年**的 artpack。
 
-2005 年，**Jason Scott** 在 *BBS: The Documentary* 中专门用一集 "Artscene" 讲述 ANSI 艺术场景的历史，主要覆盖 ACiD 和 iCE。
+2005 年，**Jason Scott** 在 *BBS: The Documentary* 中专门用一集 **"Artscene"** 讲述 ANSI 艺术场景的历史，主要覆盖 ACiD 和 iCE，采访了两团体的成员及其他人士，讲述作品、发布和内部文化。
+
+**"The Art of Warez"** 短片也记录了 ANSI 艺术场景的起源和历史。
 
 ---
 
@@ -391,19 +497,35 @@ Woods 大幅扩展了游戏：
 
 ### 9.4 Zork 的诞生（1977–1979）
 
-**1977 年底**，MIT 的四名学生——**Marc Blank、Dave Lebling、Tim Anderson 和 Bruce Daniels**——在玩到 Adventure 后一个月内开始开发自己的版本。
+**1977 年底**，MIT 的四名学生——**Marc Blank、Dave Lebling、Tim Anderson 和 Bruce Daniels**——在玩到 Adventure 后一个月内开始开发自己的版本。他们都是 MIT **Dynamic Modelling Group（DM）**的成员。
 
-他们的游戏 **Zork**（最初叫 Dungeon）比 Adventure 有重大突破：
+Lebling 之前已在 PDP-10 上创建了 *Spacewar!* 版本和 *Maze* 游戏（双人迷宫射击游戏），还写了一个 *Dungeons & Dragons* 辅助程序来自动化桌上游戏的书簿工作。他还与 Blank 和 Anderson 合作创建了一个包含 1000+ 问题的 trivia 游戏。
+
+他们选择用 **MDL**（"Muddle"）编程——一种 MIT 开发的 LISP 基语言，提供强大的字符串处理能力。MDL 使 Zork 的解析器远超 Adventure 的双词命令——它理解完整句子，包括介词和形容词（"hit the troll with the Elvish sword"），这一系统后来被称为 **Interlogic**。
+
+**"Zork"** 这个名字来自 MIT 黑客俚语——意为未完成的程序、占位符名称、或无脏话的感叹词。游戏最初正式叫 *Dungeon*，但 nickname Zork 已经 stuck 无法更改。
+
+**Marc Blank 的通勤**：Blank 完成本科后去了纽约的 Albert Einstein 医学院，但每周末从纽约开车到波士顿帮忙开发 Zork。
+
+他们的游戏 **Zork** 比 Adventure 有重大突破：
 - **更先进的解析器**：理解完整句子（"hit the troll with the Elvish sword"），而非 Adventure 的双词命令
 - 更丰富的世界观：大地下帝国（Great Underground Empire）
 - 幽默感和个性鲜明的写作
 - 110 个房间、122 个物品、~40 个动词
 
-### 9.5 Infocom 与商业文字冒险（1979–）
+### 9.5 Infocom 与 Z-Machine（1979–）
 
-1979 年，Zork 的创作者们成立了 **Infocom** 公司，将文字冒险游戏商业化。Infocom 发明了 **Z-Machine**——一种虚拟机，让同一游戏可以在不同家用电脑上运行。ZIL（Zork Implementation Language）是他们的开发语言。
+**1979 年 6 月 22 日**，Infocom 正式成立。DM 实验室主任 **Al Vezza** 希望商业化实验室开发的技术，推动了公司的创建。初始资本仅 **$11,500**，由成员们凑钱。创始人包括：Blank、Lebling、Anderson、Joel Berez、Vezza、Chris Reeve、Stu Galley、Scott Cutler、Mike Broos 和 **J.C.R. Licklider**。
 
-Infocom 的成功定义了整个文字冒险游戏 genre。2019 年，Microsoft 将 Zork I 的原始 ZIL 源码开源。
+**技术挑战**：Zork 原始代码只在 PDP-10 上运行（MDL 语言），但家用电脑不支持 MDL，通常连 Fortran 编译器都没有，软盘只存 180KB，甚至用磁带存储。
+
+**Z-Machine 的发明**：Joel Berez 和 Marc Blank 提出了一个天才方案——创建自己的编程语言 **ZIL**（Zork Implementation Language，MDL 的精简版），运行在自定义虚拟机 **Z-Machine** 上。只需将 Z-Machine 解释器（ZIP，Z-machine Interpreter Program）移植到新平台，而非移植每个游戏。这是 1979 年的"一次编写，到处运行"——与现代跨平台游戏引擎的理念相同。
+
+1979 年，他们在租用的 DEC-20 上开发，实现了 **10:1 的数据压缩比**。第一个 ZIP 由 **Scott Cutler** 为 TRS-80 编写。
+
+**1981 年 1 月**，MDL 版 Zork 做了最终更新——游戏达到了 1MB 的大小墙。此后 Zork 被分为三部曲：**Zork I、II、III**，分别于 1980、1981、1982 年商业发布。
+
+Infocom 的成功定义了整个文字冒险游戏 genre。2019 年，Microsoft 将 Zork I 的原始 ZIL 源码开源（github.com/historicalsource/zork1）。
 
 ### 9.6 文字冒险的遗产
 
@@ -422,53 +544,66 @@ Colossal Cave Adventure 直接催生了：
 
 ### 10.1 Rogue 的诞生（1980）
 
-**Rogue** 由 **Glenn Wichman** 和 **Michael Toy** 于 **1980 年**在 UC Santa Cruz 创建。灵感来自 *Adventure* 和 *Star Trek* 文字游戏。他们发现了 Ken Arnold 的 **curses** 库，可以在终端上操作字符位置，于是创建了一个"图形化的随机冒险游戏"。
+**Rogue** 由 **Glenn Wichman** 和 **Michael Toy** 于 **1980 年**在 UC Santa Cruz 创建。灵感来自 *Adventure* 和 *Star Trek* 文字游戏。他们发现了 Ken Arnold 的 **curses** 库——一个可以在终端上操作字符位置的库——于是创建了一个"图形化的随机冒险游戏"。
+
+Toy 后来在 UC Berkeley 的计算实验室工作，遇到了 Arnold，Arnold 帮助优化了 curses 代码并在游戏中实现了更多功能。
 
 核心特征：
-- **ASCII 图形**：用字符表示怪物、物品、墙壁、门
-- **程序化生成**：每次游戏地牢布局不同
+- **ASCII 图形**：用字符表示怪物、物品、墙壁、门。`@` 代表玩家——意为 **"where you're at"**（你在哪里）。不同字母代表不同怪物，颜色编码增加信息密度
+- **程序化生成**：每次游戏地牢布局不同——这是受限于 VAX-11/780 的内存而被迫采用的方案，却意外创造了极高的重玩价值
 - **永久死亡（permadeath）**：死了就死了，没有存档复活
 - **回合制**：玩家移动一步，怪物也移动一步
-- **`@` 代表玩家**：意为"where you're at"
 
-Rogue 被包含在 **BSD UNIX v4.2**（1984）中，传播到全美各大学。Dennis Ritchie 曾戏称 Rogue 是"历史上最大的 CPU 周期浪费"。
+Rogue 被包含在 **BSD UNIX v4.2**（1984）中，传播到全美各大学。**Dennis Ritchie**（C 语言发明人）曾戏称 Rogue 是 **"the biggest waste of CPU cycles in history"**（历史上最大的 CPU 周期浪费）。
 
-### 10.2 Hack（1982）
+### 10.2 Beneath Apple Manor——真正的第一个 Roguelike（1978）
 
-Jay Fenlason 和高中同学们因无法再访问 Rogue，从记忆中重建了一个类似的游戏——**Hack**。1982 年，源代码通过 USENIX 磁带分发。
+虽然 genre 以 Rogue 命名，但 **Beneath Apple Manor**（1978）by **Don Worth** 实际上早于 Rogue 两年。它在 Apple II 上运行，包含程序化生成、角色扮演元素、回合制战斗。但由于 Worth 是手工销售而非通过 ARPANET 分发，知名度远不如 Rogue。
 
-### 10.3 NetHack（1987）
+### 10.3 Hack（1982）
 
-1987 年 7 月，Mike Stephenson 在 Hack 基础上创建了 **NetHack**——名字中的"Net"反映通过 USENET 协作开发。NetHack 引入了：
-- 更多怪物（借鉴多种神话体系）
+**Jay Fenlason** 和高中同学们（Kenny Woodland、Mike Thome、Jonathan Payne）在 Lincoln-Sudbury Regional High School 的计算机实验室里，因无法再访问 Rogue，从记忆中重建了一个类似的游戏——**Hack**。名字既指"hack and slash"游戏，也指在没有源码的情况下重建 Rogue 的"programming hack"。
+
+1982 年，Fenlason 将源代码通过 USENIX 磁带分发。
+
+### 10.4 Andries Brouwer 的 Hack 扩展
+
+荷兰数学家 **Andries Brouwer** 在 Centrum Wiskunde & Informatica（CWI）发现了 Hack 磁带，被深深吸引。他在几个月内发布了 4 个新版本，加入了：长虫（攻击中间会分裂成两条！）、宠物、幸运饼干、角色职业（战士/骑士/穴居人/巫师/游客/考古学家）、在地板上写字等。然后他失去了兴趣，停止了开发。
+
+### 10.5 NetHack（1987）
+
+1987 年 7 月，**Mike Stephenson** 在 Hack 基础上创建了 **NetHack**——名字中的"Net"反映通过 USENET 协作开发。他与宾夕法尼亚大学哲学教授 **Izchak Miller** 和 Janet Walz 组成了 **DevTeam**。
+
+NetHack 引入了：
+- 更多怪物（借鉴多种神话体系，包括 Terry Pratchett 的 *Discworld* 系列启发的"游客"职业配闪光灯相机）
 - 预定义关卡 + 程序化元素
 - 分支路径和角色任务
-- 荒诞的死法——NetHack 以此闻名
+- **荒诞的死法**——NetHack 以此闻名，玩家可以死于各种离奇原因
 
-NetHack DevTeam 至今仍在维护，以开发保密性著称。
+NetHack DevTeam 至今仍在维护，以**开发保密性**著称——他们很少透露即将发布的改进内容，对代码贡献者也有严格筛选。
 
-### 10.4 Moria / UMoria / Angband（1985–）
+### 10.6 Moria / UMoria / Angband（1985–）
 
-- **Moria**（1985）by Robert Koeneke：以 Lord of the Rings 为主题，50 层地牢，怪物有不同速度
-- **UMoria**（1987）：Moria 的移植
+- **Moria**（1985）by **Robert Koeneke**，University of Oklahoma 学生。以 *Lord of the Rings* 为主题，50 层地牢（Rogue 的两倍），怪物有不同速度（越深越快），加入商店和角色职业。Koeneke 用 26 个字母的不同含义（如颜色编码的怪物）从 textmode 图形中挤出更多游戏深度。他还命名了一个怪物以第一个杀死 Balrog 的玩家命名。
+- **UMoria**（1987）：Moria 的移植版
 - **Angband**（1990）：以 Morgoth 的铁堡垒为名，可玩数百小时
 
-### 10.5 ADOM（1994）
+### 10.7 ADOM（1994）
 
-**Ancient Domains of Mystery** by Thomas Biskup，结合 NetHack 的深度和更故事驱动的体验。多个地牢通过大地图连接，混沌势力影响系统。
+**Ancient Domains of Mystery** by **Thomas Biskup**，Technical University of Dortmund 学生。结合 NetHack 的深度和更故事驱动的体验。多个地牢通过大地图连接，混沌势力影响系统——受混沌影响的区域会导致角色变异，可能有益也可能有害。
 
-### 10.6 现代 Roguelike 与 Roguelite
+### 10.8 现代 Roguelike 与 Roguelite
 
 - **Dungeon Crawl Stone Soup**（2006）
-- **Brogue**（2009）：保留 ASCII 图形但用彩色着色
-- **Tales of Maj'Eyal**（2010）
-- **Spelunky**（2008）：平台跳跃 + Roguelike
+- **Brogue**（2009）：保留 ASCII 图形但用彩色着色和动画使其生动，砍掉了角色职业、商店等非核心元素
+- **Tales of Maj'Eyal**（2010）：开放世界、非线性故事、游戏内聊天
+- **Spelunky**（2008）：平台跳跃 + Roguelike，将 genre 带入新方向
 - **The Binding of Isaac**（2011）
 - **FTL**（2012）
 - **Slay the Spire**（2019）
 - **Hades**（2020）：将 Roguelike 带入主流
 
-"Roguelike"一词于 1993 年在 Usenet 新闻组上被创造，用于统一讨论 Rogue、Hack、Moria、Angband 等游戏。
+**"Roguelike"一词的诞生**：1993 年，Usenet 用户们在讨论如何统一 Rogue、Hack、Moria、Angband 等游戏的讨论组时，经过三周辩论，从 `rec.games.dungeon.*` 改为 `rec.games.roguelike.*`——以 Rogue 命名，因为它被认为是这些游戏中最古老的。这一定名过程与"Doom clone"后来演变为"first-person shooter"类似。
 
 ---
 
@@ -536,26 +671,65 @@ Commodore 64 的 VIC-II 图形芯片提供 16 色和 40×25 文本模式。C64 �
 ### 14.1 从 BBS 到 Web
 
 1990 年代中期，互联网取代 BBS 成为主要的数字通信平台。ASCII 艺术从 BBS 转移到：
-- **Usenet 新闻组**：`alt.ascii-art` 等
-- **电子邮件**：签名档中的 ASCII 艺术
+- **Usenet 新闻组**：`alt.ascii-art` 成为创作者分享、批评和存档的中心
+- **电子邮件**：签名档中的 ASCII 艺术——Usenet 有一条 netiquette 规定签名不超过 4 行，但很多人无视这条规则，用精心制作的 ASCII 艺术装饰签名。甚至有一个专门嘲笑违规者的新闻组 **`alt.fan.warlord`**——以一位特别热衷于制作超长 ASCII 签名的用户命名
 - **IRC**：mIRC pop-ups 和 MACRO art
 - **Web**：`<pre>` 标签中的 ASCII 艺术
 
-### 14.2 表情符号的发明
+### 14.2 表情符号的发明——Scott Fahlman 与 :-)（1982）
 
-ASCII 艺术家发明了**表情符号（emoticons）**——用少量字符组合表示情感状态：`:)` `:>` `:(` 等。电子邮件和 Usenet 充斥着这些符号。这是 1990 年代 ASCII 艺术黄金时代的一部分。
+**1982 年 9 月 19 日**，Carnegie Mellon University 计算机科学家 **Scott Fahlman** 在 CMU 的 bboard（电子公告板）上提出了 `:-)` 和 `:-(`——这被公认为 ASCII 表情符号（emoticon）的诞生。
 
-### 14.3 Joan Stark——ASCII 艺术大师
+**起因**：一个关于电梯里水银泄漏的幽默警告被其他用户误解为严肃消息。这引发了一场关于如何在纯文本中标记"这不是严肃的"的讨论。
 
-**Joan G. Stark**（署名 jgs）是最著名的 ASCII 艺术家之一。她的作品广泛流传，许多 ASCII 艺术作品角落都能看到她的署名 "jgs"。她的历史文章 *The History of ASCII (Text) Art* 是研究 ASCII 艺术史的重要参考文献。
+Fahlman 的原始帖子建议：
+- `:-)` 标记"attempted humor"（试图幽默）
+- `:-(` 标记严肃内容
 
-### 14.4 ASCII 艺术的"经典"作品
+其他建议包括 `*`（星号）和 `&`（代表笑弯腰的人），但 Fahlman 的方案胜出。几个月内，smiley 传到了 ARPANET 和 Usenet。
 
-- **Spy at the Wall** 系列
-- **Silly Cows** 系列（David Bader 编辑）
-- **Snoopy** 各种变体
-- **Mona Lisa** 各种版本
-- **ASCIIquarium**（ASCII 水族箱）
+**鼻子的消失**：Stanford 大学的研究者调查了 400 万条 Twitter 消息，发现去掉鼻子的 `:)` 比原始的 `:-)` 更常见。1996 年 The Smiley Company 成立并商业化 smiley 商标，The Smiley Dictionary 网站编目了 500+ ASCII 表情符号。
+
+### 14.3 Joan G. Stark——"The Queen of ASCII Art"
+
+**Joan G. Stark**，又名 **Spunk** 或署名 **jgs**，是最著名的 ASCII 艺术家之一。许多 ASCII 艺术作品角落都能看到她的署名 "jgs"——她的作品广泛流传于整个互联网。
+
+- **1995 年夏天**首次接触 ASCII 艺术
+- **1996 年 7 月**开始创作 ASCII 艺术
+- **1996–2003 年**创作数百件作品，主要发布在 Usenet `alt.ascii-art` 新闻组
+- **1996–1998 年**网站每月更新，超过 **250,000 独立访客**
+- 网站托管在 GeoCities（Soho/7373）
+- 白底黑字为主，也创作彩色作品
+- **民间艺术风格**，徒手创作，平均每件 **15–20 分钟**
+- 至少有**四个孩子**
+- 被称为 **"The Queen of ASCII Art"**
+
+Stark 的参与被视为**女性在线参与增加**的例子，她的 imagery 被视为 ASCII 艺术 **"softer, more stereotypically feminine"**（更柔和、更刻板印象中的女性风格）的代表。
+
+她的历史文章 *The History of ASCII (Text) Art* 是研究 ASCII 艺术史的重要参考文献，详细记录了从打字机艺术到 RTTY 到 BBS 的完整脉络。
+
+### 14.4 Christopher Johnson 的 ASCII Art Collection（1994）
+
+**1994 年 11 月**，**Christopher Johnson** 在早期万维网上发布了他的 ASCII Art Collection，托管在 **chris.com** 域名上（后来移到 asciiart.website）。这是最大、最知名的在线 ASCII 艺术存档之一。
+
+- 按字母索引、主题分类、教程和链接
+- 成为普通 Web 用户发现 ASCII 艺术的**中央门户**
+- 从 1994 年运营至今（超过 30 年）
+- 包含 Usenet `alt.ascii-art` 的存档
+
+`alt.ascii-art` Usenet 新闻组是创作者分享、批评和存档的中心。Johnson 自己在 1994 年 11–12 月就在该组发布了大量请求（Snoopy、Garfield、Star Trek、Barney 等）。
+
+另一个有趣的新闻组是 **`alt.fan.warlord`**——专门嘲笑违反 4 行签名限制的 Usenet 用户的过度精美 ASCII 签名档。
+
+**"The Adventures of Nerd Boy"**（2001–2007）：在 `alt.ascii-art` 上发布了六年的 ASCII 艺术漫画，虽然" decidedly unambitious"（ decidedly 不太有野心），但代表了 ASCII 艺术在叙事领域的尝试。
+
+### 14.5 ASCII 艺术的"经典"作品
+
+- **Spy at the Wall** 系列——最早的互联网 ASCII 艺术之一
+- **Silly Cows** 系列（David Bader 编辑）——遍布互联网的经典
+- **Snoopy** 各种变体——从 1970 年代行式打印机到 1990 年代 Usenet
+- **Mona Lisa** 各种版本——从 Knowlton 的 1966 年版到无数变体
+- **ASCIIquarium**（ASCII 水族箱）——终端动画彩蛋
 
 ---
 
@@ -790,3 +964,27 @@ stickystyle 的 ZorkGPT 让 LLM 自主玩 Zork I——纯靠推理探索世界�
     - 互动小说游戏数据库，含评分、评论、标签、推荐
 87. **IFWiki (Interactive Fiction Wiki)** — https://www.ifwiki.org/
     - 互动小说百科全书，涵盖游戏、工具、历史、人物
+88. **Wikipedia: Emoticon** — https://en.wikipedia.org/wiki/Emoticon
+89. **Scott Fahlman: Original Smiley Post** — https://www.cs.cmu.edu/~sef/Orig-Smiley.htm
+90. **Scott Fahlman: "The Birth, Spread, and Evolution of the Smiley Emoticon" (PDF)** — https://www.cs.cmu.edu/~sef/Smiley2021.pdf
+91. **Ars Technica: "In 1982, a physics joke gone wrong sparked the invention of the emoticon"** — https://arstechnica.com/gadgets/2025/11/in-1982-a-physics-joke-gone-wrong-sparked-the-invention-of-the-emoticon/
+92. **Vice: "The Lost Art of Warez"** — https://www.vice.com/en/article/the-lost-art-of-warez
+93. **The New Stack: "The Surprisingly Rich History of ASCII Art"** — https://thenewstack.io/surprisingly-rich-history-ascii-art/
+94. **ASCII Art Archive: "The history of ASCII Art"** — https://www.asciiart.eu/history-of-ascii-art
+95. **Christopher Johnson's ASCII Art Collection** — https://asciiart.website
+96. **Wikipedia: Joan Stark** — https://en.wikipedia.org/wiki/Joan_Stark
+97. **Joan Stark's ASCII Art Gallery (GeoCities archive)** — https://oldcompcz.github.io/jgs/joan_stark/
+98. **Wikipedia: BEFLIX** — https://en.wikipedia.org/wiki/BEFLIX
+99. **ETHW: "Early Digital Art At Bell Telephone Laboratories"** — https://ethw.org/First-Hand:Early_Digital_Art_At_Bell_Telephone_Laboratories,_Inc
+100. **ETHW: "Harmon-Knowlton's 'The Nude' Overshadows All"** — https://ethw.org/First-Hand:Harmon-Knowlton's_%22The_Nude%22_Overshadows_All
+101. **V&A Museum: Studies in Perception I** — https://collections.vam.ac.uk/item/O239963/studies-in-perception-i-print-harmon-leon/
+102. **MoMA: "An Evening of Computer Films with Ken Knowlton"** — https://www.moma.org/calendar/events/4117
+103. **NYT: "Ken Knowlton, a Father of Computer Art and Animation, Dies at 91"** — https://www.nytimes.com/2022/06/24/technology/ken-knowlton-dead.html
+104. **Digital Art Museum: Ken Knowlton** — https://dam.org/museum/artists_ui/artists/knowlton-ken
+105. **Filmmaker Magazine: "Engineers, Artists, Both? Bell Labs' Pioneering Ken Knowlton"** — https://filmmakermagazine.com/116836-joanne-mcneil-bell-labs-ken-knowlton
+106. **History of Information: BEFLIX** — https://www.historyofinformation.com/detail.php?id=3467
+107. **Wikipedia: Beneath Apple Manor** — https://en.wikipedia.org/wiki/Beneath_Apple_Manor
+108. **The Dot Eaters: "Zork and Infocom"** — https://thedoteaters.com/?bitstory=computer/zork-and-infocom
+109. **Timeweave Chronicles: "How Interactive Fiction Was Born"** — https://timeweavechronicles.blogspot.com/2026/07/how-interactive-fiction-was-born-and.html
+110. **roysac.com: "An Abbreviated History of the Underground Computer Art Scene"** — https://www.roysac.com/learn/HistoryUndergroundComputerArtScene.html
+111. **Wikipedia: ACiD Productions** — https://en.wikipedia.org/wiki/ACiD_Productions
