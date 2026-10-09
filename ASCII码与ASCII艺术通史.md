@@ -988,3 +988,9 @@ stickystyle 的 ZorkGPT 让 LLM 自主玩 Zork I——纯靠推理探索世界�
 109. **Timeweave Chronicles: "How Interactive Fiction Was Born"** — https://timeweavechronicles.blogspot.com/2026/07/how-interactive-fiction-was-born-and.html
 110. **roysac.com: "An Abbreviated History of the Underground Computer Art Scene"** — https://www.roysac.com/learn/HistoryUndergroundComputerArtScene.html
 111. **Wikipedia: ACiD Productions** — https://en.wikipedia.org/wiki/ACiD_Productions
+112. **IFDB: Interactive Fiction Top 50 of All Time (2011 edition)** — https://ifdb.org/viewcomp?id=oymvom4wrawhd4hr
+    - 35 位参与者投票，437 票，183 款游戏
+    - 第 1 名: Spider and Web (Andrew Plotkin)
+    - 第 22 名并列: Zork I (Marc Blank & Dave Lebling)
+    - 第 34 名并列: Colossal Cave Adventure (William Crowther & Donald Woods)
+    - 展示了文档第九章所述游戏在后世的历史评价
